@@ -1,22 +1,46 @@
-# Backup Automation System (Bash Project)
- 
-## Project Overview
-This project is a **fully automated backup system** written in **Bash**, designed to create, verify, and clean up backups efficiently.  
-It’s ideal for developers and system administrators who want a simple, configurable, and reliable backup workflow.
- 
-### Features
- Create compressed `.tar.gz` backups with date and time  
- Automatically generate and verify SHA-256 checksums  
- Clean up old backups using retention rules (daily/weekly/monthly)  
- Configurable backup settings via `backup.config`  
- Logging of all actions with timestamps  
- Dry run mode (test what will happen without executing)  
- Prevents multiple runs using a lock file  
- Optional restore functionality  
- 
----
- 
-## Folder Structure
+Backup Automation Script (backup.sh)
+
+A powerful and flexible shell script for creating, verifying, and managing system backups — complete with logging, configuration, and retention policies.
+
+Features
+
+✅ Automatic Compression — Backs up folders into a single .tar.gz file
+✅ Checksums (SHA256) — Ensures backup integrity
+✅ Retention Rules — Keeps:
+
+7 daily backups
+
+4 weekly backups
+
+3 monthly backups
+
+✅ Configuration File (backup.config) — Control where and how backups run
+✅ Logging (backup.log) — Detailed audit trail
+✅ Dry Run Mode — Test actions without making changes
+✅ Lock File Protection — Prevent multiple concurrent runs
+✅ Verification — Auto-checksum and test extraction
+✅ Optional Email Notifications — Simulated with email.txt
+✅ Bonus: Restore and list functions included
+
+Requirements
+
+Bash (v4.0 or later)
+
+tar, gzip, sha256sum, date, awk, df
+
+Linux or macOS (tested)
+
+Installation
+
+Clone or download this repository.
+
+Make the script executable:
+
+chmod +x backup.sh
+
+Create a configuration file named backup.config in the same directory.
+
+Folder Structure
  
 backup-system/
 ├── backup.sh # Main script
@@ -30,70 +54,77 @@ backup-system/
 │ └── monthly/ # Monthly backups
 └── test_data/ # Sample data folder for testing
  
-yaml
----
- 
-## Configuration (`backup.config`)
- 
-The script reads this configuration file to set up your backup preferences.
- 
-```bash
-# --- Default Backup Configuration ---
- 
-# Where to store backups
-BACKUP_DESTINATION=./backups
- 
-# Patterns to exclude from backup (comma-separated)
-EXCLUDE_PATTERNS=".git,node_modules,.cache"
- 
-# Retention rules
-DAILY_KEEP=7
-WEEKLY_KEEP=4
-MONTHLY_KEEP=3
- 
-# (Optional) Email notifications (not implemented yet)
-EMAIL_NOTIFICATION=""
- 
- 
-Step 1: Make the script executable
-chmod +x backup.sh
- 
-Step 2: Run a normal backup
-./backup.sh ./test_data
- 
- 
-This creates a backup file like:
- 
+
+
+Usage
+
+1️⃣ Create a Backup
+./backup.sh /home/user/documents
+
+Creates a backup named:
+
 backup-2025-11-03-1630.tar.gz
 backup-2025-11-03-1630.tar.gz.sha256
- 
-Step 3: Run in dry-run mode
- 
-See what would happen without actually creating/deleting files.
- 
-./backup.sh --dry-run ./test_data
- 
-Step 4: Restore from a backup (optional bonus)
-./backup.sh --restore backups/daily/backup-2025-11-03-1630.tar.gz --to ./restored_files
- 
- ## How It Works
- 
- Step 1: Create Backup
- 
-The script compresses the target folder into a .tar.gz file.
- 
-# It names the backup using the current date and time:
- 
-backup-YYYY-MM-DD-HHMM.tar.gz
- 
- Step 2: Generate and Verify Checksum
- 
-# It creates a SHA-256 checksum for each backup:
- 
-sha256sum backup.tar.gz > backup.tar.gz.sha256
- 
- 
-# Then it verifies the integrity of the archive immediately:
- 
-sha256sum -c backup.tar.gz.sha256
- 
+2️⃣ Dry Run (Simulate)
+./backup.sh --dry-run /home/user/documents
+
+Shows what would happen, without modifying anything.
+
+3️⃣ List Available Backups
+./backup.sh --list
+
+Displays all stored backups with their creation dates and sizes.
+
+4️⃣ Restore a Backup
+./backup.sh --restore backup-2025-11-07-1430.tar.gz --to /home/user/restored_files
+5️⃣ Delete Old Backups (Automatic)
+
+The script automatically keeps:
+
+Last 7 daily
+
+Last 4 weekly
+
+Last 3 monthly
+and deletes older backups during each run.
+
+
+Verification Steps
+
+After creating a backup:
+
+The script recalculates the checksum and compares it with the saved .sha256 file.
+
+It extracts a test file from the archive to ensure it’s not corrupted.
+
+If successful, you’ll see:
+
+SUCCESS: Backup verified successfully
+
+Example from backup.log:
+
+[2025-11-03 16:30:15] INFO: Starting backup of /home/user/documents
+[2025-11-03 16:30:45] SUCCESS: Backup created: backup-2025-11-03-1630.tar.gz
+[2025-11-03 16:30:46] INFO: Checksum verified successfully
+[2025-11-03 16:30:50] INFO: Deleted old backup: backup-2025-10-05-0900.tar.gz
+
+Safety Mechanisms
+
+Lock file: /tmp/backup.lock prevents overlapping runs
+
+Automatic cleanup: Partial backups removed if interrupted
+
+Permission & existence checks: Stops if source or destination invalid
+
+Disk space check: Ensures enough room before starting
+
+Error Handling  
+
+Error	                        Message
+
+Missing folder	Error:         Source folder not found
+Permission denied	Error:      Cannot read folder, permission denied
+Disk full	Error:              Not enough disk space for backup
+Config missing	Warning:       backup.config not found, using defaults
+Interrupted:	                 Partial files cleaned automatically
+
